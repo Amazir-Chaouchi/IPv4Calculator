@@ -2,59 +2,147 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct s_ipv4 {
-    char class;
-    char *strBinaryAddress[4];
-    int iDecimalAddress[4];
-    int iSubNetMask[4];
-} t_ipv4;
-
-int CheckArguments(int pa_argc);
-void ProcessAddress(char *pa_argv[], t_ipv4 *pa_sIpv4);
+void StoreAddress(char *pa_argv[], int pa_ipAddress[]);
+void SubNetMask(char pa_class, int pa_mask[]);
+void NetworkAddress(int pa_ipAddress[], int pa_mask[], int pa_network[]);
+void Display(int pa_address[]);
+char Class(int pa_ipAddress[1]);
 
 int main(int argc, char *argv[]) {
     
-    t_ipv4 ipv4;
+    char cNetworkClass;
+    int iBinaryAddress[32];
+    int iDecimalAddress[4];
+    int iSubNetMask[4] = {0};
+    int iNetworkAddress[4] = {0};
     
-    if(CheckArguments(argc)) {
-        ProcessAddress(argv, &ipv4);
-    }
-    
-    return EXIT_SUCCESS;
-}
-
-int CheckArguments(int pa_argc) {
-    
-    if(pa_argc != 3) {
+    char cOption;
+        
+    if(argc != 3) {
         printf("\r\n\tERROR : Wrong syntax.\r\n\r\n");
         exit(EXIT_FAILURE);
     }
-    else {
-        return 1;
+    else {        
+        StoreAddress(argv, iDecimalAddress);
+        
+
+        printf("IPv4 : ");
+        for(int i = 0; i < 4; i++) {
+            printf("%d", iDecimalAddress[i]);
+            if(i < 3) {
+                printf(".");
+            }
+        }
+        printf("\r\n");
+        
+        //Détermine l'emplacement de stockage de la valeur en fonction du format de l'iP
+        sscanf(argv[1], "-%c", &cOption);    
+        switch(cOption) {
+            case 'c' :
+                cNetworkClass = Class(iDecimalAddress);
+                printf("Network class : %c\r\n", cNetworkClass);
+                break;
+                
+            case 'm' :
+                SubNetMask(Class(iDecimalAddress), iSubNetMask);
+                
+                printf("SubNet mask : ");
+                Display(iSubNetMask);                
+                
+                break;
+                
+            case 'n' :
+                SubNetMask(Class(iDecimalAddress), iSubNetMask);
+                NetworkAddress(iDecimalAddress, iSubNetMask, iNetworkAddress);
+                
+                printf("Network address : ");
+                Display(iNetworkAddress);
+                
+                break;
+                
+            default :
+                printf("\r\n\tERROR : Invalid argument '%c'.\r\n\r\n", cOption);
+            
+                exit(EXIT_FAILURE);
+        }
+    }
+        
+    return EXIT_SUCCESS;
+}
+
+void StoreAddress(char *pa_argv[], int pa_ipAddress[]) {
+    
+    char *ptr_Token;
+    const char separators[] = ".";
+    
+    //Récupère la chaîne passée en argument de main et la range dans la variable...
+    ptr_Token = strtok(pa_argv[2], separators);
+    for(int i = 0; i < 4; i++) {
+        if(ptr_Token) {
+            pa_ipAddress[i] = atoi(ptr_Token);
+            ptr_Token = strtok(NULL, separators);
+        }
+    }
+    
+    //Vérifie que les valeurs sont conformes...
+    for(int i = 0; i < 4; i++) {
+        if(pa_ipAddress[i] < 0 || pa_ipAddress[i] > 255) {
+            printf("\r\n\tERROR : This IP address can't exist.\r\n\r\n");
+            exit(EXIT_FAILURE);
+        }
     }
 }
-void ProcessAddress(char *pa_argv[], t_ipv4 *pa_ipv4) {
+void SubNetMask(char pa_class, int pa_mask[]) {
     
-    void *ptr_Address;
-    char *ptr_Token;
-    char cOption;
-    const char separators[] = ".";
-    int iByteCounter = 0;
+    int iNbFullBytes;
     
-    //Détermine l'emplacement de stockage de la valeur en fonction du format de l'iP
-    sscanf(pa_argv[1], "-%c", &cOption);    
-    switch(cOption) {
-        case 'b':
-            ptr_Address = &pa_ipv4->strBinaryAddress;
+    switch(pa_class) {
+        case 'A' :
+            iNbFullBytes = 1;
             break;
-        case 'd':
-            ptr_Address = &pa_ipv4->iDecimalAddress;
+        case 'B' :
+            iNbFullBytes = 2;
+            break;
+        case 'C' :
+            iNbFullBytes = 3;
             break;
         default :
-            printf("\r\n\tERROR : Invalid argument '%c'.\r\n", cOption);
-            exit(EXIT_FAILURE);
+            break;
     }
     
-    //Récupère la chaîne passée en argument de main
-    ptr_Token = strtok(pa_argv[1], separators);
+    for(int i = 0; i < iNbFullBytes; i++) {
+        pa_mask[i] += 255;
+    }
 }
+void NetworkAddress(int pa_ipAddress[], int pa_mask[], int pa_network[]) {
+    
+    for(int i = 0; i < 4; i++) {
+        pa_network[i] = (pa_ipAddress[i] & pa_mask[i]);
+    }
+}
+void Display(int pa_address[]) {
+    
+    for(int i = 0; i < 4; i++) {
+        printf("%d", pa_address[i]);
+        if(i < 3) {
+            printf(".");
+        }
+    }
+    printf("\r\n");
+}
+char Class(int pa_ipAddress[]) {
+
+    if(pa_ipAddress[0] >= 192) {
+        return 'C';
+    }
+    else if(pa_ipAddress[0] >= 128) {
+        return 'B';
+    }
+    else if(pa_ipAddress[0] >= 1 && pa_ipAddress[0] <= 126) {
+        return 'A';
+    }
+    else {
+        printf("\r\n\tERROR : In GenerateClass().\r\n");
+    }
+}
+
