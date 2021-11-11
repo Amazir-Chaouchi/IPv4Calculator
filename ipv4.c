@@ -11,8 +11,8 @@ char Class(int pa_ipAddress[1]);
 int main(int argc, char *argv[]) {
     
     char cNetworkClass;
-    int iBinaryAddress[32];
-    int iDecimalAddress[4];
+    int iBytesBinaryAddress[4][8];
+    int iBytesDecimalAddress[4];
     int iSubNetMask[4] = {0};
     int iNetworkAddress[4] = {0};
     
@@ -23,12 +23,12 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     else {        
-        StoreAddress(argv, iDecimalAddress);
+        StoreAddress(argv, iBytesDecimalAddress);
         
 
         printf("IPv4 : ");
         for(int i = 0; i < 4; i++) {
-            printf("%d", iDecimalAddress[i]);
+            printf("%d", iBytesDecimalAddress[i]);
             if(i < 3) {
                 printf(".");
             }
@@ -39,12 +39,12 @@ int main(int argc, char *argv[]) {
         sscanf(argv[1], "-%c", &cOption);    
         switch(cOption) {
             case 'c' :
-                cNetworkClass = Class(iDecimalAddress);
+                cNetworkClass = Class(iBytesDecimalAddress);
                 printf("Network class : %c\r\n", cNetworkClass);
                 break;
                 
             case 'm' :
-                SubNetMask(Class(iDecimalAddress), iSubNetMask);
+                SubNetMask(Class(iBytesDecimalAddress), iSubNetMask);
                 
                 printf("SubNet mask : ");
                 Display(iSubNetMask);                
@@ -52,11 +52,24 @@ int main(int argc, char *argv[]) {
                 break;
                 
             case 'n' :
-                SubNetMask(Class(iDecimalAddress), iSubNetMask);
-                NetworkAddress(iDecimalAddress, iSubNetMask, iNetworkAddress);
+                SubNetMask(Class(iBytesDecimalAddress), iSubNetMask);
+                NetworkAddress(iBytesDecimalAddress, iSubNetMask, iNetworkAddress);
                 
                 printf("Network address : ");
                 Display(iNetworkAddress);
+                
+                break;
+            
+            case 'a' :
+                SubNetMask(Class(iBytesDecimalAddress), iSubNetMask);
+                NetworkAddress(iBytesDecimalAddress, iSubNetMask, iNetworkAddress);
+                cNetworkClass = Class(iBytesDecimalAddress);
+                
+                printf("SubNet mask : ");
+                Display(iSubNetMask);
+                printf("Network address : ");
+                Display(iNetworkAddress);
+                printf("Network class : %c\r\n", cNetworkClass);
                 
                 break;
                 
@@ -92,6 +105,7 @@ void StoreAddress(char *pa_argv[], int pa_ipAddress[]) {
         }
     }
 }
+
 void SubNetMask(char pa_class, int pa_mask[]) {
     
     int iNbFullBytes;
@@ -114,12 +128,14 @@ void SubNetMask(char pa_class, int pa_mask[]) {
         pa_mask[i] += 255;
     }
 }
+
 void NetworkAddress(int pa_ipAddress[], int pa_mask[], int pa_network[]) {
     
     for(int i = 0; i < 4; i++) {
         pa_network[i] = (pa_ipAddress[i] & pa_mask[i]);
     }
 }
+
 void Display(int pa_address[]) {
     
     for(int i = 0; i < 4; i++) {
@@ -130,6 +146,7 @@ void Display(int pa_address[]) {
     }
     printf("\r\n");
 }
+
 char Class(int pa_ipAddress[]) {
 
     if(pa_ipAddress[0] >= 192) {
@@ -145,4 +162,3 @@ char Class(int pa_ipAddress[]) {
         printf("\r\n\tERROR : In GenerateClass().\r\n");
     }
 }
-
